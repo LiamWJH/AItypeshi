@@ -17,17 +17,24 @@ def get_temperature(city: str) -> str:
   }
   return temperatures.get(city, "Unknown")
 
-messages = [{"role": "user", "content": "What is the temperature in New York?"}]
+running = True
+while running:
+  messages = [{"role": "user", "content": input("> ")}]
 
-response = chat(
-  model='qwen3.8',
-  messages=messages,
-  think=True,
-  stream=False,
-)
-response = chat(model="qwen3.8", messages=messages, tools=[get_temperature], think=True)
+  response = chat(
+    model='qwen3.5:9b',
+    messages=messages,
+    think=False,
+    stream=True,
+  )
+  print("<AI> ", end='')
+  for chunk in response:
+    print(chunk.message.content, end='', flush=True)
+  print("")
 
-messages.append(response.message)
+"""response = chat(model="qwen3.5:2b", messages=messages, tools=[get_temperature], think=False)"""
+
+"""messages.append(response.message)
 if response.message.tool_calls:
   # only recommended for models which only return a single tool call
   call = response.message.tool_calls[0]
@@ -35,5 +42,5 @@ if response.message.tool_calls:
   # add the tool result to the messages
   messages.append({"role": "tool", "tool_name": call.function.name, "content": str(result)})
 
-  final_response = chat(model="qwen3.8", messages=messages, tools=[get_temperature], think=True)
-  print(final_response.message.content)
+  final_response = chat(model="qwen3.5:2b", messages=messages, tools=[get_temperature], think=False)
+  print(final_response.message.content)"""
