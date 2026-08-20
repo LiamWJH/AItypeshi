@@ -28,10 +28,12 @@ while running:
 
                   CONDITIONS FOR EACH TYPE
                   0: Normal chat
-                  - Any formal words. example: "hi", "yo", "hey"
+                  - Any single words. example: "hi", "yo", "hey", "yes", "no"
                   - Any question that only requires elementary/middle/high school concept. examaple: "explain me entropy?", "what's a function?", "explain me fundamental physics"
                   1: Sight
                   - Any question or statement that directly or indirectly references things not included in question itself. example: "Whats on my screen?", "What's that round button gonna do?", "what is that image?", "look at that"
+                  - Any question/statement that requires you to see what the objective is.
+                  - Any question/statement that requires a screenshot of the screen.
                   2: Advanced chat
                   - Areas that require specialized knowledge to explain. example: "Explain linked lists", "Explain fermat's last theorm"
                   - Questions that request you to solve a problem. Example: "Write a function to find the longest common prefix string amongst an array of strings. If there is no common prefix, return an empty string "".", "x plus xy plus y is 3, x to the power of two multiplied with y plus x multiplied with y to the power of 2 is -70, what is x and what is y?"
@@ -58,6 +60,22 @@ while running:
 
       response = chat(
         model='qwen3.5:9b',
+        messages=messages,
+        think=False,
+        stream=True,
+      )
+      print("<AI> ", end='')
+      for chunk in response:
+        print(chunk.message.content, end='', flush=True)
+      print("")
+    case 1:
+      # Sight feature stuff not implemented yet
+      pass
+    case 2:
+      messages = [{"role": "user", "content": userinput}]
+
+      response = chat(
+        model='qwen3.8:27b',
         messages=messages,
         think=False,
         stream=True,
