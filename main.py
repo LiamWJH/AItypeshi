@@ -2,8 +2,16 @@ from ollama import chat
 import pathlib
 import os
 import asyncio
+import threading
+import queue
 
 from sight import sight
+
+result_queue = queue.Queue()
+def run_sight():
+  asyncio.run(sight())
+
+threading.Thread(target=run_sight, daemon=True).start()
 
 # parts of the code is from the ollama documentation: you can probably tell from the existence of comments ig
 def get_temperature(city: str) -> str:
@@ -22,10 +30,20 @@ def get_temperature(city: str) -> str:
   }
   return temperatures.get(city, "Unknown")
 
-def get_last_sight_batch():
-  sight_dir = pathlib.Path().resolve() / "vision_mem"
-  sights = sorted(os.listdir(sight_dir), key=lambda x: os.path.getmtime(os.path.join(sight_dir, x)))
-  return sights[-12:]
+# TOOLINGS
+def get_sight_batch(n: int):
+    """Gets the recent screenshot/screenshots of the user's screen
+
+    Args:
+      n: the number of images to grab from
+    Returns:
+      The recent screenshot/screenshots of the user's screen
+    """
+    if n > 5:
+      n = 5
+    sight_dir = pathlib.Path(__file__).resolve().parent / "vision_mem"
+    sights = sorted(sight_dir.iterdir(), key=lambda p: p.stat().st_mtime)
+    return [str(p) for p in sights[-n:]]
 
 running = True
 while running:
@@ -36,7 +54,6 @@ while running:
                f"""IDENTIFY THE TYPE OF CHAT THE USER WANTS FROM THE BELOW WITH THE CONDITION I GIVE:
                   0: Normal chat/
                   1: Sight/
-                  2: Advanced chat/
 
                   CONDITIONS FOR EACH TYPE
                   0: Normal chat
@@ -46,10 +63,8 @@ while running:
                   - Any question or statement that directly or indirectly references things not included in question itself. example: "Whats on my screen?", "What's that round button gonna do?", "what is that image?", "look at that"
                   - Any question/statement that requires you to see what the objective is.
                   - Any question/statement that requires a screenshot of the screen.
-                  2: Advanced chat
-                  - Areas that require specialized knowledge to explain. example: "Explain linked lists", "Explain fermat's last theorm"
-                  - Questions that request you to solve a problem. Example: "Write a function to find the longest common prefix string amongst an array of strings. If there is no common prefix, return an empty string "".", "x plus xy plus y is 3, x to the power of two multiplied with y plus x multiplied with y to the power of 2 is -70, what is x and what is y?"
-
+                  - Any question/statement that you don't have the real time access to.
+                  - Any question/statement that you can't answer without more user specification of the question.
                   IF NO CONDITION IS MET
                   1. Try finding the most fit amongst the given
                   2. If still none is found return Normal chat.
@@ -68,48 +83,81 @@ while running:
   print(response.message.content)
   match int(response.message.content):
     case 0:
-      messages = [{"role": "user", "content": userinput}]
-
+      messages = [{"role": "user", "content": f"set the amount of screenshots needed for this task and return the path to them: '{userinput}'"}]
       response = chat(
         model='qwen3.5:9b',
         messages=messages,
         think=False,
-        stream=True,
+        stream=False,
+        tools=[get_sight_batch]
       )
+
+      messages.append(response.message)
+
+      if not response.message.tool_calls:
+        print(f"<AI> {response.message.content}")
+        continue
+
+      call = response.message.tool_calls[0]
+      result = get_sight_batch(**call.function.arguments)
+      messages.append({"role": "tool", "tool_name": call.function.name, "content": str(result)})
+      print(result)
+      final_messages = [{
+        "role": "user",
+        "content": f"Answer the user's question directly and concisely, using the screenshost only as supporting content if relevant. Don't describe the screenshots unless asked. Question: {userinput}",
+        "images": result
+        }]
+      final_response = chat(
+        model='qwen3.5:9b',
+        messages=final_messages,
+        think=False,
+        stream=True,
+        options={"num_ctx": 16000}
+      )
+
       print("<AI> ", end='')
-      for chunk in response:
+      for chunk in final_response:
         print(chunk.message.content, end='', flush=True)
       print("")
     case 1:
-      print("c1")
-      images = get_last_sight_batch()
-      messages = [{"role": "user", "content": userinput, "images": images}]
-
+      messages = [{"role": "user", "content": f"set the amount of screenshots needed for this task and return the path to them: '{userinput}'"}]
       response = chat(
         model='qwen3.5:9b',
         messages=messages,
         think=False,
-        stream=True,
+        stream=False,
+        tools=[get_sight_batch]
       )
-      print("<AI> ", end='')
-      for chunk in response:
-        print(chunk.message.content, end='', flush=True)
-      pass
-    case 2:
-      messages = [{"role": "user", "content": userinput}]
 
-      response = chat(
-        model='qwen3.8:27b',
-        messages=messages,
+      messages.append(response.message)
+
+      if not response.message.tool_calls:
+        print(f"<AI> {response.message.content}")
+        continue
+
+      call = response.message.tool_calls[0]
+      result = get_sight_batch(**call.function.arguments)
+      messages.append({"role": "tool", "tool_name": call.function.name, "content": str(result)})
+      print(result)
+      final_messages = [{
+        "role": "user",
+        "content": f"Answer the user's question directly and concisely, using the screenshost only as supporting content if relevant. Don't describe the screenshots unless asked. Question: {userinput}",
+        "images": result
+        }]
+      final_response = chat(
+        model='qwen3.5:9b',
+        messages=final_messages,
         think=False,
         stream=True,
+        options={"num_ctx": 16000}
       )
+
       print("<AI> ", end='')
-      for chunk in response:
+      for chunk in final_response:
         print(chunk.message.content, end='', flush=True)
       print("")
 
-  asyncio.run(sight())
+
 
 """response = chat(model="qwen3.5:2b", messages=messages, tools=[get_temperature], think=False)"""
 
