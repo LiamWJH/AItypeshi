@@ -31,13 +31,15 @@ def get_sight_batch(n: int):
       raise codefuckedup
     return all_batch
 
-def move_mouse_to(x,y):
-    """Moves the user's cursor to a position with the x and y args that starts from the top left corner of the screen.
+def click_mouse(clicks: int, interval: float, button: str):
+    """Clicks the left or middle or right button on the mouse on certain interval and certain amount of clicks
 
     Args:
-      x: the x coordinate to move the cursor to
-      y: the y coordinate to move the cursor to
+      clicks: the amount of clicks to do
+      interval: the time between clicks in seconds
+      button: either the 'left' or 'right' or 'middle' to specify which button to press
     Returns:
       Nothing
     """
-    pyautogui.moveTo(x, y, duration=0.6)
+    time.sleep(0.2)
+    pyautogui.click(clicks=clicks, interval=interval, button=button)
