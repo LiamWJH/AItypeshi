@@ -15,7 +15,8 @@ async def see():
     with mss.MSS() as sct:
         screenshot = sct.grab(sct.monitors[0])
 
-        base_name = datetime.now().strftime('%I-%M %p')
+        now = datetime.now()
+        base_name = f"{now.year}-{now.month}-{now.day}-{now.hour}-{now.minute}-{now.second}-{now.microsecond // 1000}"
         file_path = output_dir / f"{base_name}.png"
 
         counter = 1
