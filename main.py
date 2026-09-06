@@ -1,4 +1,9 @@
 from ollama import chat
+import pathlib
+import os
+import asyncio
+
+from sight import sight
 
 # parts of the code is from the ollama documentation: you can probably tell from the existence of comments ig
 def get_temperature(city: str) -> str:
@@ -17,9 +22,16 @@ def get_temperature(city: str) -> str:
   }
   return temperatures.get(city, "Unknown")
 
+def get_last_sight_batch():
+  sight_dir = pathlib.Path().resolve() / "vision_mem"
+  sights = sorted(os.listdir(sight_dir), key=lambda x: os.path.getmtime(os.path.join(sight_dir, x)))
+  return sights[-12:]
+
 running = True
 while running:
   userinput = input("> ")
+
+  #we have to write function that does it without AI later so it gets faster
   messages = [{"role": "user", "content":
                f"""IDENTIFY THE TYPE OF CHAT THE USER WANTS FROM THE BELOW WITH THE CONDITION I GIVE:
                   0: Normal chat/
@@ -69,7 +81,19 @@ while running:
         print(chunk.message.content, end='', flush=True)
       print("")
     case 1:
-      # Sight feature stuff not implemented yet
+      print("c1")
+      images = get_last_sight_batch()
+      messages = [{"role": "user", "content": userinput, "images": images}]
+
+      response = chat(
+        model='qwen3.5:9b',
+        messages=messages,
+        think=False,
+        stream=True,
+      )
+      print("<AI> ", end='')
+      for chunk in response:
+        print(chunk.message.content, end='', flush=True)
       pass
     case 2:
       messages = [{"role": "user", "content": userinput}]
@@ -84,6 +108,8 @@ while running:
       for chunk in response:
         print(chunk.message.content, end='', flush=True)
       print("")
+
+  asyncio.run(sight())
 
 """response = chat(model="qwen3.5:2b", messages=messages, tools=[get_temperature], think=False)"""
 
