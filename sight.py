@@ -46,7 +46,7 @@ def compare_images(path1, path2):
     return structure_score, color_score
 
 def delete_overlapping_sight():
-    files = sorted(os.listdir(output_dir))
+    files = sorted(sorted(os.listdir(output_dir)), key=lambda x: os.path.getmtime(os.path.join(output_dir, x)))
     itemN = len(files)
     for i in range(itemN - 1):
         a = str(output_dir / files[i])
@@ -57,9 +57,6 @@ def delete_overlapping_sight():
         if structure_score > 0.97 and color_score > 0.97:
             os.remove(a)
 
-async def main():
-    while True:
+async def sight():
         await see()
         delete_overlapping_sight()
-
-asyncio.run(main())
