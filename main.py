@@ -4,8 +4,12 @@ import os
 import asyncio
 import threading
 import queue
+import time
 
-from sight import sight
+from sight import sight, see
+
+class codefuckedup(Exception):
+  pass
 
 result_queue = queue.Queue()
 def run_sight():
@@ -43,7 +47,20 @@ def get_sight_batch(n: int):
       n = 5
     sight_dir = pathlib.Path(__file__).resolve().parent / "vision_mem"
     sights = sorted(sight_dir.iterdir(), key=lambda p: p.stat().st_mtime)
-    return [str(p) for p in sights[-n:]]
+    #r_batch = [str(p) for p in sights[-n:]]
+    all_batch = sights[-n:]
+    i = 0
+    while i < len(all_batch):
+      p = all_batch[i]
+      if time.time() - p.stat().st_mtime > 60:
+        all_batch.pop(i)
+        continue
+      else:
+        i += 1
+    if len(all_batch) == 0:
+      raise codefuckedup
+    return all_batch
+
 
 running = True
 while running:
@@ -104,7 +121,7 @@ while running:
       print(result)
       final_messages = [{
         "role": "user",
-        "content": f"Answer the user's question directly and concisely, using the screenshost only as supporting content if relevant. Don't describe the screenshots unless asked. Question: {userinput}",
+        "content": f"Answer the user's question directly and concisely, using the screenshost only as supporting content if relevant. Don't describe the screenshots unless asked. Whenever the user refers to a screenshot or a picture they are referring to one in the screenshot provided,  Question: {userinput}",
         "images": result
         }]
       final_response = chat(
