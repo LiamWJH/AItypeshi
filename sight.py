@@ -58,5 +58,6 @@ def delete_overlapping_sight():
             os.remove(a)
 
 async def sight():
+    while True:
         await see()
         delete_overlapping_sight()
