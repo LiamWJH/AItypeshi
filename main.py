@@ -15,15 +15,24 @@ def run_sight():
 
 threading.Thread(target=run_sight, daemon=True).start()
 
-class reponse:
-  def __init__(self, call_tool, response):
-    self.call_tool = call_tool
-    self.response = response
-  def say(self, ):
-    print("<AI> ", end='')
-    for chunk in response:
-      print(chunk.message.content, end='', flush=True)
-    print("")
+def say(message, stream=False, isPlain=False):
+  if isPlain:
+    if stream:
+      print("<AI> ", end='')
+      for c in message:
+        print(c, end='', flush=True)
+      print("")
+    else:
+      print(f"<AI> {message}")
+  else:
+    if stream:
+      print("<AI> ", end='')
+      for chunk in message:
+        print(chunk.message.content, end='', flush=True)
+      print("")
+    else:
+        print(f"<AI> {message.message.content}")
+
 
 running = True
 while running:
@@ -50,36 +59,24 @@ while running:
       stream=True,
     )
 
-    print("<AI> ", end='')
-    for chunk in response:
-      print(chunk.message.content, end='', flush=True)
-    print("")
+    say(response, stream=True)
     continue
 
   call = response.message.tool_calls[0]
+  call_args = call.function.arguments
   call_result = None
 
-  # match tool -> use tool -> notify tool was used -> break
-  # what we want to add: know user input + AI response -> after each response store to DB or json file or smth for tool to pull
-  # if we end up using json we use classes bc they look cool and nice
-  # i should probably do OOP so it is cleaner.
-  # userinput variable + the print that was used = one chat
-  # fuck DB i dont want to learn sql im going for json.
-  # so i guess store the userinput and response as a class? or maybe just add to the json file after each response?
-  # but then i have to print the result too so it becomes repetitve and dirty to see
-  # maybe i should make a response class and make a inherited class of tool_response
-  # lets try and roll back if it's shi
   match call.function.name:
     case "pause_for":
-      pause_for(**call.function.arguments)
-      print(f"<AI> waited for {call.function.arguments["t"]} seconds")
-      break
+      pause_for(**call_args)
+      say(f"waited for {call.function.arguments["t"]} seconds", isPlain=True)
+      continue
     case "click_mouse":
-      threading.Thread(target=click_mouse, kwargs=call.function.arguments, daemon=True).start()
-      print(f"<AI> clicked mouse")
-      break
+      threading.Thread(target=click_mouse, kwargs=call_args, daemon=True).start()
+      say(f"clicked mouse", isPlain=True)
+      continue
     case "get_sight_batch":
-      call_result = get_sight_batch(**call.function.arguments)
+      call_result = get_sight_batch(**call_args)
       messages.append({"role": "tool", "tool_name": call.function.name, "content": str(call_result)})
       print(call_result)
 
@@ -96,9 +93,8 @@ while running:
         options={"num_ctx": 16000}
       )
 
-      print("<AI> ", end='')
-      for chunk in final_response:
-        print(chunk.message.content, end='', flush=True)
-      print("")
-      break
+      say(final_response, stream=True)
+      continue
+    case _:
+      raise codefuckedup
   continue
