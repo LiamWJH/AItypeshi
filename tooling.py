@@ -43,3 +43,13 @@ def click_mouse(clicks: int, interval: float, button: str):
     """
     time.sleep(0.2)
     pyautogui.click(clicks=clicks, interval=interval, button=button)
+
+def pause_for(t: int):
+    """Does nothing and pauses for certain amount of seconds
+
+    Args:
+      t: the amount of seconds that for nothing to be done
+    Returns:
+      Nothing
+    """
+    time.sleep(t)
