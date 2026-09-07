@@ -7,7 +7,7 @@ import queue
 import time
 
 from sight import sight
-from tooling import get_sight_batch, click_mouse
+from tooling import *
 
 result_queue = queue.Queue()
 def run_sight():
@@ -141,15 +141,21 @@ while running:
     messages=messages,
     think=False,
     stream=False,
-    tools=[get_sight_batch, click_mouse]
+    tools=[get_sight_batch, click_mouse, pause_for]
   )
   messages.append(response.message)
+
 
   if not response.message.tool_calls:
     print(f"<AI> {response.message.content}")
     continue
 
   call = response.message.tool_calls[0]
+
+  if call.function.name == "pause_for":
+      pause_for(**call.function.arguments)
+      print(f"<AI> waited for {call.function.arguments["t"]} seconds")
+      continue
 
   if call.function.name == "click_mouse":
     threading.Thread(target=click_mouse, kwargs=call.function.arguments, daemon=True).start()
@@ -178,16 +184,3 @@ while running:
       print(chunk.message.content, end='', flush=True)
     print("")
     continue
-
-"""response = chat(model="qwen3.5:2b", messages=messages, tools=[get_temperature], think=False)"""
-
-"""messages.append(response.message)
-if response.message.tool_calls:
-  # only recommended for models which only return a single tool call
-  call = response.message.tool_calls[0]
-  result = get_temperature(**call.function.arguments)
-  # add the tool result to the messages
-  messages.append({"role": "tool", "tool_name": call.function.name, "content": str(result)})
-
-  final_response = chat(model="qwen3.5:2b", messages=messages, tools=[get_temperature], think=False)
-  print(final_response.message.content)"""
