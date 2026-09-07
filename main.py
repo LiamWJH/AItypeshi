@@ -1,13 +1,18 @@
 from ollama import chat
-import pathlib
-import os
 import asyncio
 import threading
 import queue
+import json
 import time
 
 from sight import sight
 from tooling import *
+
+class conversation_summary:
+  def __init__(self, summary, time, which_tool_used):
+    self.summary = summary
+    self.time = time
+    self.which_tool_used = which_tool_used
 
 result_queue = queue.Queue()
 def run_sight():
@@ -17,22 +22,43 @@ threading.Thread(target=run_sight, daemon=True).start()
 
 def say(message, stream=False, isPlain=False):
   if isPlain:
-    if stream:
-      print("<AI> ", end='')
-      for c in message:
-        print(c, end='', flush=True)
-      print("")
-    else:
-      print(f"<AI> {message}")
+    print(f"<AI> {message}")
+    return message
+  if stream:
+    print("<AI> ", end='')
+    full_text = ""
+    for chunk in message:
+      text = chunk.message.content
+      print(text, end='', flush=True)
+      full_text += text
+    print("")
+    return full_text
   else:
-    if stream:
-      print("<AI> ", end='')
-      for chunk in message:
-        print(chunk.message.content, end='', flush=True)
-      print("")
-    else:
-        print(f"<AI> {message.message.content}")
+    print(f"<AI> {message.message.content}")
+    return message.message.content
 
+def save_conversation_summary_for_session(user, response, whichtool):
+  messages = [{"role": "user", "content":  f"Write a factual one-sentence summary of this exchange, third person, no commentary, no questions, no meta-text. Try to make it as short as possible. User said: \"{user}\" | AI replied: \"{response}\""}]
+  response=chat(
+    model='qwen3.5:9b',
+    messages=messages,
+    think=False,
+    stream=False,
+  )
+  timestamp = time.time()
+  local_struct = time.localtime(timestamp)
+  formatted_time = time.strftime("%Y-%m-%d %H:%M:%S", local_struct)
+
+
+  with open("MEMORY.json", "r") as f:
+    data = json.load(f)
+  data.append({
+    "summary": response.message.content,
+    "timestamp": formatted_time,
+    "usedtool": whichtool,
+  })
+  with open("MEMORY.json", "w") as f:
+    json.dump(data, f, indent=2, ensure_ascii=False)
 
 running = True
 while running:
@@ -51,7 +77,7 @@ while running:
   messages.append(response.message.content)
 
   if not response.message.tool_calls:
-    messages = [{"role": "user", "content": f"Answer the question/statement precisley and in a clean summarized way. : '{userinput}'"}]
+    messages = [{"role": "user", "content": f"Answer the question/statement precisley and in a clean summarized way. If the user shows frustration ask for ways you could help them.: '{userinput}'"}]
     response = chat(
       model='qwen3.5:9b',
       messages=messages,
@@ -59,7 +85,9 @@ while running:
       stream=True,
     )
 
-    say(response, stream=True)
+    resp = say(response, stream=True)
+
+    save_conversation_summary_for_session(userinput, resp, None)
     continue
 
   call = response.message.tool_calls[0]
@@ -70,10 +98,12 @@ while running:
     case "pause_for":
       pause_for(**call_args)
       say(f"waited for {call.function.arguments["t"]} seconds", isPlain=True)
+      save_conversation_summary_for_session(userinput, f"waited for {call.function.arguments["t"]} seconds", "pause_for")
       continue
     case "click_mouse":
       threading.Thread(target=click_mouse, kwargs=call_args, daemon=True).start()
       say(f"clicked mouse", isPlain=True)
+      save_conversation_summary_for_session(userinput, f"clicked mouse", "click_mouse")
       continue
     case "get_sight_batch":
       call_result = get_sight_batch(**call_args)
@@ -93,7 +123,8 @@ while running:
         options={"num_ctx": 16000}
       )
 
-      say(final_response, stream=True)
+      resp = say(final_response, stream=True)
+      save_conversation_summary_for_session(userinput, resp, "get_sight_batch")
       continue
     case _:
       raise codefuckedup
