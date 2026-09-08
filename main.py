@@ -21,6 +21,7 @@ def run_sight():
 
 threading.Thread(target=run_sight, daemon=True).start()
 
+
 def say(message, stream=False, isPlain=False):
   if isPlain:
     print(f"<AI> {message}")
@@ -65,7 +66,7 @@ running = True
 while running:
   userinput = input("> ")
 
-  messages = [{"role": "user", "content": f"Determine if an action is needed for this task, and if so which task. for mouse/keyboard related actions, assume the cursor is already set to the right position. : '{userinput}'"}]
+  messages = [{"role": "user", "content": f"Determine if an action is needed for this task, and if so which task. for mouse/keyboard related actions, assume the cursor is already set to the right position. You may use the context to judge too.: CONTEXT: '{get_recent_memory_batch(1)}', USERINPUT: '{userinput}'"}]
   response = chat(
     model='qwen3.5:9b',
     messages=messages,
@@ -74,11 +75,10 @@ while running:
     tools=[get_recent_memory_batch, get_memory_batch, get_sight_batch, click_mouse, pause_for]
   )
 
-
   messages.append(response.message.content)
 
   if not response.message.tool_calls:
-    messages = [{"role": "user", "content": f"Answer the question/statement precisley and in a clean summarized way. If the user shows frustration ask for ways you could help them.: '{userinput}'"}]
+    messages = [{"role": "user", "content": f"Answer the question/statement precisley and in a clean summarized way. If the user shows frustration ask for ways you could help them. You may use the past conversation as contexts for referencing: CONTEXT: '{get_recent_memory_batch(3)}', QUESTION: '{userinput}'"}]
     response = chat(
       model='qwen3.5:9b',
       messages=messages,
@@ -113,7 +113,7 @@ while running:
 
       final_messages = [{
         "role": "user",
-        "content": f"Answer the user's question directly and concisely, using the screenshost only as supporting content if relevant. Don't describe the screenshots unless asked. Whenever the user refers to a screenshot or a picture they are referring to one in the screenshot provided, Question: {userinput}",
+        "content": f"Answer the user's question directly and concisely, using the screenshost and summarized context only as supporting content if relevant. Don't describe the screenshots or contexts unless asked. Whenever the user refers to a screenshot or a picture they are referring to one in the screenshot provided, CONTEXT: '{get_recent_memory_batch(3)}', QUESTION: '{userinput}'",
         "images": call_result
       }]
       final_response = chat(
