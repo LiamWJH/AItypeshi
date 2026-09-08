@@ -1,9 +1,91 @@
 import pathlib
 import time
 import pyautogui
+import json
 
 class codefuckedup(Exception):
   pass
+
+STOPWORDS = {"a","an","the","is","was","were","you","i","me","my","when","time","did","do","does","to","of","in","on","for","and","or","but","use","using","it","that","this","how","what"}
+
+def get_recent_memory_batch(n: int):
+  """Gives access to our previous conversation history by getting the most recent several conversation between the user and you from a database so you can use for reference.
+
+  Args:
+    n: The number of past summarized conversations that will be picked as reference.
+
+  Returns:
+    The summarized past conversations between the user and the AI.
+  """
+  relevant = []
+  with open("memory.json", "r") as f:
+    data = json.loads(f.read())
+    data.reverse()
+    relevant = []
+    i = 0
+    while i < n:
+      relevant.append(data[i])
+      i += 1
+
+    if len(relevant) == 0: raise codefuckedup
+
+    memorybuf = ""
+    for mem in relevant:
+      if mem["usedtool"] == None:
+        memorybuf += f'[{mem["timestamp"]}] {mem["summary"]}\n'
+      else:
+        memorybuf += f'[{mem["timestamp"]}] [used tool: {mem["usedtool"]}] {mem["summary"]}\n'
+
+    return memorybuf
+
+def get_memory_batch(search_kw: list[str], n: int):
+  """Gives access to our previous conversation history by searching for conversations between the user and you from a database that have the relevant keywords of the question past so you can use for reference.
+
+  Args:
+    search_kw: A list of keywords that should be choosed from the content user's question/statement that the user explicitly states or is implicitly referenced which is going to be searched up in the whole memory database for relevant memory.
+    n: The number of past summarized conversations that will be picked as reference.
+
+  Returns:
+    The summarized past conversations between the user and the AI.
+  """
+  return _get_memory_batch(search_kw, n, og_prompt=None)
+
+def _get_memory_batch(search_kw: list[str], n: int, og_prompt=None):
+  """Internal tool cause if registered as ollama it gonna go weird and autistic"""
+  if n > 20: n = 20
+
+  relevant = []
+  with open("memory.json", "r") as f:
+    data = json.loads(f.read())
+    data.reverse()
+    for section in data:
+      if len(relevant) >= n: break
+      sum = section["summary"]
+      for kw in search_kw:
+        if kw.lower() in STOPWORDS: continue
+        if kw in sum and section not in relevant:
+            relevant.append(section)
+
+    if len(relevant) == 0 and og_prompt:
+      for section in data:
+        if len(relevant) >= n: break
+        sum = section["summary"]
+        for kw in og_prompt:
+          if kw.lower() in STOPWORDS: continue
+          if kw in sum and section not in relevant:
+              relevant.append(section)
+
+    if len(relevant) == 0:
+      relevant = data[:n]
+
+    memorybuf = ""
+    for mem in relevant:
+      if mem["usedtool"] == None:
+        memorybuf += f'[{mem["timestamp"]}] {mem["summary"]}\n'
+      else:
+        memorybuf += f'[{mem["timestamp"]}] [used tool: {mem["usedtool"]}] {mem["summary"]}\n'
+
+    return memorybuf
 
 def get_sight_batch(n: int):
     """Gets the recent screenshot/screenshots of the user's screen
