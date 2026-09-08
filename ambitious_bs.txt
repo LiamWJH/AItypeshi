@@ -2,15 +2,6 @@ make tooling chosing faster with other model + switch back to smth else when nee
 add HUD/UI that doesnt get screen shotted
 add a planning tool that lets AI do shi in order well
 make a backend system that notifys and feeds small info to the AI like maybe timer ended song that you dont like came out or shi
-
-add memory system (this is fucked up)
- - turns out you just feed the AI past conversation like what
- - so i guess i will but since more prompt = slower so summarize every n time
- ? should i make recalling memory a tool or no
-  - Why i should
-   - avoid unnescessary sluggishness
-  - Why not
-    - Likely chance that AI will fail to use it well regardless of which model
-    - Overhead in itself that it has to choose tool.
-
-so what comes first?
+change model to 9b Q5 or sum shi
+change model to uncensored version (so it doesnt become politically boring)
+make it a name and way to call itself and me proper names
