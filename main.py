@@ -7,6 +7,7 @@ import time
 
 from sight import sight
 from tooling import *
+from tooling import _get_memory_batch
 
 class conversation_summary:
   def __init__(self, summary, time, which_tool_used):
@@ -70,7 +71,7 @@ while running:
     messages=messages,
     think=False,
     stream=False,
-    tools=[get_sight_batch, click_mouse, pause_for]
+    tools=[get_recent_memory_batch, get_memory_batch, get_sight_batch, click_mouse, pause_for]
   )
 
 
@@ -125,6 +126,46 @@ while running:
 
       resp = say(final_response, stream=True)
       save_conversation_summary_for_session(userinput, resp, "get_sight_batch")
+      continue
+    case "get_memory_batch":
+      print(call_args)
+      call_result = _get_memory_batch(**call_args, og_prompt=userinput.split(" "))
+      messages.append({"role": "tool", "tool_name": call.function.name, "content": str(call_result)})
+
+      final_messages = [{
+        "role": "user",
+        "content": f"Answer the user's question directly and concisely by using the given context if relevant. Don't describe the context unless asked. Context: {call_result} Question: {userinput}",
+      }]
+      final_response = chat(
+        model='qwen3.5:9b',
+        messages=final_messages,
+        think=False,
+        stream=True,
+        options={"num_ctx": 16000}
+      )
+
+      resp = say(final_response, stream=True)
+      save_conversation_summary_for_session(userinput, resp, "get_memory_batch")
+      continue
+    case "get_recent_memory_batch":
+      print(call_args)
+      call_result = get_recent_memory_batch(**call_args)
+      messages.append({"role": "tool", "tool_name": call.function.name, "content": str(call_result)})
+
+      final_messages = [{
+        "role": "user",
+        "content": f"Answer the user's question directly and concisely by using the given context if relevant. Don't describe the context unless asked. Context: {call_result} Question: {userinput}",
+      }]
+      final_response = chat(
+        model='qwen3.5:9b',
+        messages=final_messages,
+        think=False,
+        stream=True,
+        options={"num_ctx": 16000}
+      )
+
+      resp = say(final_response, stream=True)
+      save_conversation_summary_for_session(userinput, resp, "get_recent_memory_batch")
       continue
     case _:
       raise codefuckedup
