@@ -9,7 +9,7 @@ class codefuckedup(Exception):
 STOPWORDS = {"a","an","the","is","was","were","you","i","me","my","when","time","did","do","does","to","of","in","on","for","and","or","but","use","using","it","that","this","how","what"}
 
 def get_recent_memory_batch(n: int):
-  """Gives access to our previous conversation history by getting the most recent several conversation between the user and you from a database so you can use for reference.
+  """Gives access to our previous conversation history that occured outside current chat session by getting the most recent several conversation between the user and you from a database so you can use for reference.
 
   Args:
     n: The number of past summarized conversations that will be picked as reference.
@@ -39,7 +39,7 @@ def get_recent_memory_batch(n: int):
     return memorybuf
 
 def get_memory_batch(search_kw: list[str], n: int):
-  """Gives access to our previous conversation history by searching for conversations between the user and you from a database that have the relevant keywords of the question past so you can use for reference.
+  """Gives access to our previous conversation history that occured outside current chat session by searching for conversations between the user and you from a database that have the relevant keywords of the question past so you can use for reference.
 
   Args:
     search_kw: A list of keywords that should be choosed from the content user's question/statement that the user explicitly states or is implicitly referenced which is going to be searched up in the whole memory database for relevant memory.
