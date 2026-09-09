@@ -1,0 +1,43 @@
+Designing a system that makes the model rely less on the memory saved but still preserves/is superior in referencing
+
+1. why is the current memory system unfit?
+ - 1. Slow for ANY question
+ - 2. Searching memory based off KEYWORDS almost always FAIL,
+ - 3. Delusion of not remembering eg) `> when did you explain permutation <AI>  I have not explained any LeetCode permutation problems in our current conversation.
+
+2. Causes of the problems
+SLOWNESS
+1. calling last 3 memory every time(But shouldn't this be no issue?)
+2. searching for every word if there is no keyword including memory found
+3. NEW/INTUITIVE: claude suggest loading the json file every run is expensive. So keep it in memory and add new memory to it until exit of the program
+MEMORY SEARCH FAIL
+1. most content is referred as different names or implied in the content, not the word itself
+DELUSION OF NOT REMEMBERING
+idk y tf it's like that im pretty sure the memory was fed to it.
+tho i can guess that maybe it's because of the AI's past statement about not remembering leetcode permutation
+
+3. (Potential)Solutions
+SLOWNESS
+1. {
+1. still call last 3 memory every time
+or
+2. keep a alt list of important memory for the conversation sorted with AI
+}
+2. In most of the time don't search from KW but utilize AI?
+3. File caching in memory
+MEMORY SEARCH FAIL
+1. For each memory use AI to see if the content will be helpful to them to use
+DELUSION OF NOT REMEMBERING
+1. IF THE ISSUE IS TRULY PAST MEMORY OF DENYING TO REMEMBER/OTHER
+add parameter to json called `right answer`
+
+THE 'EMBEDDING' soloution
+
+Still new to me never heard it yet cuz im a noob but i searched up and it says that what is does it returns a multi dimension data for strings so similar
+meaning strings end up having similar number
+
+What this means?
+This means that i can probably make searching for memory faster, and more accurate.
+so get the userinput => embed => compare summary somehow => filter
+=> so for the question and the answer not being near each other on grid we can use asymetric reterival model?
+reddit say it's designed for this
