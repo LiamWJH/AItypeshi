@@ -5,3 +5,10 @@ make a backend system that notifys and feeds small info to the AI like maybe tim
 change model to 9b Q5 or sum shi
 change model to uncensored version (so it doesnt become politically boring)
 make it a name and way to call itself and me proper names
+
+
+.\.venv\Scripts\Activate.ps1
+
+WE HAVE THE EMBEDDING WORKING BOYSSS ITS FAST ASF too
+But
+it keeps remembering the failed task as not failed, we have to add a param to let it know that too
