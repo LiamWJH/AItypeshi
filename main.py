@@ -66,19 +66,19 @@ running = True
 while running:
   userinput = input("> ")
 
-  messages = [{"role": "user", "content": f"Determine if an action is needed for this task, and if so which task. for mouse/keyboard related actions, assume the cursor is already set to the right position. You may use the context to judge too.: CONTEXT: '{get_recent_memory_batch(1)}', USERINPUT: '{userinput}'"}]
+  messages = [{"role": "user", "content": f"Determine if an action is needed for this task, and if so which task. for mouse/keyboard related actions, assume the cursor is already set to the right position. USERINPUT: '{userinput}'"}]
   response = chat(
     model='qwen3.5:9b',
     messages=messages,
     think=False,
     stream=False,
-    tools=[get_recent_memory_batch, get_memory_batch, get_sight_batch, click_mouse, pause_for]
+    tools=[get_memory_batch, get_sight_batch, click_mouse, pause_for]
   )
 
   messages.append(response.message.content)
 
   if not response.message.tool_calls:
-    messages = [{"role": "user", "content": f"Answer the question/statement precisley and in a clean summarized way. If the user shows frustration ask for ways you could help them. You may use the past conversation as contexts for referencing: CONTEXT: '{get_recent_memory_batch(3)}', QUESTION: '{userinput}'"}]
+    messages = [{"role": "user", "content": f"Answer the question/statement precisley and in a clean summarized way. If the user shows frustration ask for ways you could help them. QUESTION: '{userinput}'"}]
     response = chat(
       model='qwen3.5:9b',
       messages=messages,
@@ -113,7 +113,7 @@ while running:
 
       final_messages = [{
         "role": "user",
-        "content": f"Answer the user's question directly and concisely, using the screenshost and summarized context only as supporting content if relevant. Don't describe the screenshots or contexts unless asked. Whenever the user refers to a screenshot or a picture they are referring to one in the screenshot provided, CONTEXT: '{get_recent_memory_batch(3)}', QUESTION: '{userinput}'",
+        "content": f"Answer the user's question directly and concisely, using the screenshost and summarized context only as supporting content if relevant. Don't describe the screenshots or contexts unless asked. Whenever the user refers to a screenshot or a picture they are referring to one in the screenshot provided, QUESTION: '{userinput}'",
         "images": call_result
       }]
       final_response = chat(
@@ -128,8 +128,8 @@ while running:
       save_conversation_summary_for_session(userinput, resp, "get_sight_batch")
       continue
     case "get_memory_batch":
-      print(call_args)
-      call_result = _get_memory_batch(**call_args, og_prompt=userinput.split(" "))
+      print(call_args, "hi nerd")
+      call_result = _get_memory_batch(**call_args, userinput=userinput)
       messages.append({"role": "tool", "tool_name": call.function.name, "content": str(call_result)})
 
       final_messages = [{
@@ -146,26 +146,6 @@ while running:
 
       resp = say(final_response, stream=True)
       save_conversation_summary_for_session(userinput, resp, "get_memory_batch")
-      continue
-    case "get_recent_memory_batch":
-      print(call_args)
-      call_result = get_recent_memory_batch(**call_args)
-      messages.append({"role": "tool", "tool_name": call.function.name, "content": str(call_result)})
-
-      final_messages = [{
-        "role": "user",
-        "content": f"Answer the user's question directly and concisely by using the given context if relevant. Don't describe the context unless asked. Context: {call_result} Question: {userinput}",
-      }]
-      final_response = chat(
-        model='qwen3.5:9b',
-        messages=final_messages,
-        think=False,
-        stream=True,
-        options={"num_ctx": 16000}
-      )
-
-      resp = say(final_response, stream=True)
-      save_conversation_summary_for_session(userinput, resp, "get_recent_memory_batch")
       continue
     case _:
       raise codefuckedup
