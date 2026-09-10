@@ -2,14 +2,16 @@ import pathlib
 import time
 import pyautogui
 import json
+from sentence_transformers import SentenceTransformer, util
+
+model = SentenceTransformer("intfloat/e5-large-v2")
 
 class codefuckedup(Exception):
   pass
 
-STOPWORDS = {"a","an","the","is","was","were","you","i","me","my","when","time","did","do","does","to","of","in","on","for","and","or","but","use","using","it","that","this","how","what"}
-
+''' COMMENTED OUT BC IT INTERFERS WITH GET MEMORY BATCH
 def get_recent_memory_batch(n: int):
-  """Gives access to our previous conversation history that occured outside current chat session by getting the most recent several conversation between the user and you from a database so you can use for reference.
+  """Gives access to our most recent several conversation that occured outside current chat session that was between the user and you. so you can use it for more context to answer the user's question.
 
   Args:
     n: The number of past summarized conversations that will be picked as reference.
@@ -37,55 +39,36 @@ def get_recent_memory_batch(n: int):
         memorybuf += f'[{mem["timestamp"]}] [used tool: {mem["usedtool"]}] {mem["summary"]}\n'
 
     return memorybuf
+'''
 
-def get_memory_batch(search_kw: list[str], n: int):
-  """Gives access to our previous conversation history that occured outside current chat session by searching for conversations between the user and you from a database that have the relevant keywords of the question past so you can use for reference.
+def get_memory_batch(n:int):
+  """Gives access to our previous conversation that occured outside current chat session by getting the relevant conversation that is relevant to the userinput that was between the user and you. so you can use it for more context to answer the user's question.
 
   Args:
-    search_kw: A list of keywords that should be choosed from the content user's question/statement that the user explicitly states or is implicitly referenced which is going to be searched up in the whole memory database for relevant memory.
-    n: The number of past summarized conversations that will be picked as reference.
+    n: the maximum amount of past conversation this tool will return
 
   Returns:
-    The summarized past conversations between the user and the AI.
+    The relevant past conversations.
   """
-  return _get_memory_batch(search_kw, n, og_prompt=None)
 
-def _get_memory_batch(search_kw: list[str], n: int, og_prompt=None):
-  """Internal tool cause if registered as ollama it gonna go weird and autistic"""
-  if n > 20: n = 20
-
-  relevant = []
+def _get_memory_batch(userinput: str, n: int):
+  results = []
   with open("memory.json", "r") as f:
     data = json.loads(f.read())
-    data.reverse()
-    for section in data:
-      if len(relevant) >= n: break
-      sum = section["summary"]
-      for kw in search_kw:
-        if kw.lower() in STOPWORDS: continue
-        if kw in sum and section not in relevant:
-            relevant.append(section)
-
-    if len(relevant) == 0 and og_prompt:
-      for section in data:
-        if len(relevant) >= n: break
-        sum = section["summary"]
-        for kw in og_prompt:
-          if kw.lower() in STOPWORDS: continue
-          if kw in sum and section not in relevant:
-              relevant.append(section)
-
-    if len(relevant) == 0:
-      relevant = data[:n]
-
-    memorybuf = ""
-    for mem in relevant:
-      if mem["usedtool"] == None:
-        memorybuf += f'[{mem["timestamp"]}] {mem["summary"]}\n'
-      else:
-        memorybuf += f'[{mem["timestamp"]}] [used tool: {mem["usedtool"]}] {mem["summary"]}\n'
-
-    return memorybuf
+    for summary in data:
+      question = f"query: {userinput}"
+      answer = f"passage: {summary['summary']}"
+      embeddings = model.encode([question, answer], normalize_embeddings=True)
+      similarity = util.cos_sim(embeddings[0], embeddings[1]).item()
+      results.append((similarity, summary))
+  results.sort(key=lambda x: x[0], reverse=True)
+  print(results)
+  top = results[:n]
+  memorybuf = ""
+  for score, mem in top:
+    tag = f' [used tool: {mem["usedtool"]}]' if mem.get("usedtool") else ""
+    memorybuf += f'[{mem["timestamp"]}]{tag} {mem["summary"]}\n'
+  return memorybuf
 
 def get_sight_batch(n: int):
     """Gets the recent screenshot/screenshots of the user's screen
