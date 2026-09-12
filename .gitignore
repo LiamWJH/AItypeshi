@@ -1,2 +1,4 @@
+venv/
+.venv/
 vision_mem/
 memory.json
