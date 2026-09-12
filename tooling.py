@@ -67,7 +67,7 @@ def _get_memory_batch(userinput: str, n: int):
   memorybuf = ""
   for score, mem in top:
     tag = f' [used tool: {mem["usedtool"]}]' if mem.get("usedtool") else ""
-    memorybuf += f'[{mem["timestamp"]}]{tag} {mem["summary"]}\n'
+    memorybuf += f'[{mem["timestamp"]}] [AI correct: [{"YES" if mem["correctanswer"] else "NO"}]]{tag} {mem["summary"]}\n'
   return memorybuf
 
 def get_sight_batch(n: int):
