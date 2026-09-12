@@ -41,3 +41,6 @@ This means that i can probably make searching for memory faster, and more accura
 so get the userinput => embed => compare summary somehow => filter
 => so for the question and the answer not being near each other on grid we can use asymetric reterival model?
 reddit say it's designed for this
+
+BIGGER FISH TO FRY WE NEED TO CHANGE ROLES TO ASSISTANT FOR MEMORY TASKS
+
