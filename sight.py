@@ -4,7 +4,6 @@ from datetime import datetime
 import pathlib
 import cv2
 from skimage.metrics import structural_similarity as ssim
-import numpy as np
 import os
 import asyncio
 
