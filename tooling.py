@@ -62,7 +62,6 @@ def _get_memory_batch(userinput: str, n: int):
       similarity = util.cos_sim(embeddings[0], embeddings[1]).item()
       results.append((similarity, summary))
   results.sort(key=lambda x: x[0], reverse=True)
-  print(results)
   top = results[:n]
   memorybuf = ""
   for score, mem in top:
