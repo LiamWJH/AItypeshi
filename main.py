@@ -105,13 +105,13 @@ while running:
   tool = None
 
   think("Choosing task...")
-  messages = [{"role": "user", "content": f"Determine if an action is needed for this task, and if so which task. for mouse/keyboard related actions, assume the cursor is already set to the right position. USERINPUT: '{userinput}'"}]
+  messages = [{"role": "user", "content": f"Determine if an action is needed for this task, and if so which task. for mouse/keyboard related actions, assume the cursor is already set to the right position. When the user asks you to write about a topic write about the topic not the topic itself, when the user asks you to write a word or sentence write exactly that. USERINPUT: '{userinput}'"}]
   response = chat(
     model='qwen3.5:9b',
     messages=messages,
     think=False,
     stream=False,
-    tools=[get_memory_batch, get_sight_batch, click_mouse, pause_for]
+    tools=[get_memory_batch, get_sight_batch, write_on_kb, click_mouse, pause_for]
   )
 
   if not response.message.tool_calls:
@@ -143,6 +143,13 @@ while running:
       say(resp, isPlain=True)
       update_previous(resp, userinput, "pause_for")
       continue
+    case "write_on_kb":
+      save_conversation_summary_for_session(userinput)
+      think(f"writing '{call_args["sentence"]}'......")
+      write_on_kb(**call_args)
+      resp = f"wrote '{call_args["sentence"]}'"
+      say(resp, isPlain=True)
+      update_previous(resp, userinput, "write_on_kb")
     case "click_mouse":
       save_conversation_summary_for_session(userinput)
       think(f"{call_args["button"]} clicking {call_args["clicks"]} time with {call_args["interval"]} between each clicks......")
