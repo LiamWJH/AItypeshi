@@ -95,6 +95,17 @@ def get_sight_batch(n: int):
       raise codefuckedup
     return all_batch
 
+def write_on_kb(sentence: str):
+  """Writes desired sentence on any input with the keyboard.
+
+  Args:
+    sentence: the input to write
+  Returns:
+    Nothing
+  """
+  time.sleep(0.2)
+  pyautogui.write(sentence, interval=0.04)
+
 def click_mouse(clicks: int, interval: float, button: str):
     """Clicks the left or middle or right button on the mouse on certain interval and certain amount of clicks
 
