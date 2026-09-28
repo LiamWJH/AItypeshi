@@ -47,7 +47,7 @@ def save_conversation_summary_for_session(reaction):
 
   messages = [{"role": "user", "content":  f"Write a factual one-sentence summary of this exchange, third person, no commentary, no questions, no meta-text. Try to make it as short as possible. User said: \"{prev_userinput}\" | AI replied: \"{prev_resp}\""}]
   response=chat(
-    model='qwen3.5:9b',
+    model=model,
     messages=messages,
     think=False,
     stream=False,
@@ -81,7 +81,7 @@ def was_response_correct(resp, reaction):
               {"role": "user", "content": f"First identify if the user's statement is related to your previous response, if not say 'UNRELATED' if it is a related response identify if the reaction claims your response was correct or not and answer in 'YES' or 'NO'. USER: {reaction}"
             }]
   response = chat(
-    model='qwen3.5:9b',
+    model=model,
     messages=messages,
     think=False,
     stream=False,
@@ -94,10 +94,28 @@ def was_response_correct(resp, reaction):
 
 running = True
 
+model="gemma4:12b"
+
 prev_userinput = None
 prev_resp = None
 prev_tool = None
 first_question = True
+
+
+print("Loading AI...")
+messages = [{"role": "user", "content": f"check1"}]
+response = chat(
+  model=model,
+  messages=messages,
+  think=False,
+  stream=False,)
+messages = [{"role": "user", "content": f"check2"}]
+response = chat(
+  model=model,
+  messages=messages,
+  think=False,
+  stream=False,)
+
 
 while running:
   userinput = input("> ")
@@ -107,9 +125,9 @@ while running:
   think("Choosing task...")
   messages = [{"role": "user", "content": f"Determine if an action is needed for this task, and if so which task. for mouse/keyboard related actions, assume the cursor is already set to the right position. When the user asks you to write about a topic write about the topic not the topic itself, when the user asks you to write a word or sentence write exactly that. USERINPUT: '{userinput}'"}]
   response = chat(
-    model='qwen3.5:9b',
+    model=model,
     messages=messages,
-    think=False,
+    think=True,
     stream=False,
     tools=[get_memory_batch, get_sight_batch, write_on_kb, click_mouse, pause_for]
   )
@@ -119,7 +137,7 @@ while running:
     think("Thinking...")
     messages = [{"role": "user", "content": f"Answer the question/statement precisley and in a clean summarized way. If the user shows frustration ask for ways you could help them. QUESTION: '{userinput}'"}]
     response = chat(
-      model='qwen3.5:9b',
+      model=model,
       messages=messages,
       think=False,
       stream=True,
@@ -170,7 +188,7 @@ while running:
         "images": call_result
       })
       final_response = chat(
-        model='qwen3.5:9b',
+        model=model,
         messages=messages,
         think=False,
         stream=True,
@@ -189,7 +207,7 @@ while running:
       messages.append({"role": "user", "content": f"Answer the user's question directly and concisely by using the given context if relevant. Don't describe the context unless asked. Question: {userinput}"})
 
       final_response = chat(
-        model='qwen3.5:9b',
+        model=model,
         messages=messages,
         think=False,
         stream=True,
