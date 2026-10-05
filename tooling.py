@@ -2,9 +2,13 @@ import pathlib
 import time
 import pyautogui
 import json
+import subprocess
+import os
 from sentence_transformers import SentenceTransformer, util
+from ollama import chat
 
-model = SentenceTransformer("intfloat/e5-large-v2")
+stransformer_model = SentenceTransformer("intfloat/e5-large-v2")
+model = "gemma4:12b"
 
 class codefuckedup(Exception):
   pass
@@ -41,6 +45,84 @@ def get_recent_memory_batch(n: int):
     return memorybuf
 '''
 
+def do_task():
+  """Extends your capability by giving you the capability to write a python script that will run on the user's PC, which can perform more complicated tasks such as making software that functions as tools or etc.
+
+  Args:
+
+  Returns:
+    The user's wanted output.
+  """
+
+def _do_task(prompt):
+  messages = [{"role": "system", "content": "You control the user's computer through python scripts. Reply with a python script that fullfills the user's need. No summary of what you did, no markdown formatted text or parts of code, only the code."},
+              {"role": "user", "content": prompt}
+              ]
+  response = chat(
+    model=model,
+    messages=messages,
+    think=True,
+    stream=False,
+    options={"num_ctx": 16000}
+  )
+  messages = [{"role": "system", "content": "You choose the name of python scripts from the code. Reply with a short descriptive name, do not write the .py file extension."},
+              {"role": "user", "content": response.message.content}
+              ]
+  name_response = chat(
+    model=model,
+    messages=messages,
+    think=False,
+    stream=False,
+    options={"num_ctx": 16000}
+  )
+  with open(os.path.join("AItaskscripts", name_response.message.content+".py"), "w", encoding="utf-8") as f:
+    f.write(response.message.content)
+
+    f.close()
+
+  def run_command(command: list[str]):
+      proccess = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace")
+
+      ret = ""
+      for output in proccess.stdout:
+          ret += output
+          print(output, end='')
+      return ret
+
+  result = ""
+  while response.message.content != 'success':
+    try:
+      result, retcode = run_command(["python", os.path.join("AItaskscripts", name_response.message.content+".py")])
+    except Exception as e:
+      print(e)
+      raise codefuckedup
+    if retcode == 1:
+      messages = [{"role": "system", "content": "Identify if this result from running a python code needs an enviornmental fix (eg. package installing), or a fix of code. If an enviornmental fix is needed reply with ENV followed by the prompt you will run in the terminal, if it's a code change reply only with the whole code rewritten with any markdown formatting."},
+                  {"role": "user", "content": result}
+                  ]
+      response = chat(
+        model=model,
+        messages=messages,
+        think=True,
+        stream=False,
+        options={"num_ctx": 16000}
+      )
+      print(response.message.content)
+      if 'ENV' in response.message.content.lower()[0:5]:
+        r2 = subprocess.run(response.message.content, shell=True, text=True, capture_output=True)
+        print(r2.stdout)
+        print(r2.stderr)
+      else:
+        with open(os.path.join("AItaskscripts", name_response.message.content+".py"), "w", encoding="utf-8") as f:
+          f.write(response.message.content)
+
+          f.close()
+    else:
+      return
+
+
+
+
 def get_memory_batch(n:int):
   """Gives access to our previous conversation that occured outside current chat session by getting the relevant conversation that is relevant to the userinput that was between the user and you. so you can use it for more context to answer the user's question.
 
@@ -58,7 +140,7 @@ def _get_memory_batch(userinput: str, n: int):
     for summary in data:
       question = f"query: {userinput}"
       answer = f"passage: {summary['summary']}"
-      embeddings = model.encode([question, answer], normalize_embeddings=True)
+      embeddings = stransformer_model.encode([question, answer], normalize_embeddings=True)
       similarity = util.cos_sim(embeddings[0], embeddings[1]).item()
       results.append((similarity, summary))
   results.sort(key=lambda x: x[0], reverse=True)

@@ -7,7 +7,7 @@ import time
 
 from sight import sight
 from tooling import *
-from tooling import _get_memory_batch
+from tooling import _get_memory_batch, _do_task
 
 result_queue = queue.Queue()
 
@@ -33,8 +33,12 @@ def say(message, stream=False, isPlain=False):
     print("")
     return full_text
   else:
-    print(f"<AI> {message.message.content}")
-    return message.message.content
+    try:
+      print(f"<AI> {message.message.content}")
+      return message.message.content
+    except Exception:
+      print(message)
+      return 67
 
 def save_conversation_summary_for_session(reaction):
   global first_question, prev_userinput, prev_tool
@@ -94,7 +98,7 @@ def was_response_correct(resp, reaction):
 
 running = True
 
-model="gemma4:12b"
+model = "gemma4:12b"
 
 prev_userinput = None
 prev_resp = None
@@ -123,13 +127,13 @@ while running:
   tool = None
 
   think("Choosing task...")
-  messages = [{"role": "user", "content": f"Determine if an action is needed for this task, and if so which task. for mouse/keyboard related actions, assume the cursor is already set to the right position. When the user asks you to write about a topic write about the topic not the topic itself, when the user asks you to write a word or sentence write exactly that. USERINPUT: '{userinput}'"}]
+  messages = [{"role": "user", "content": f"Determine if an action is needed for this task, and if so which task. for mouse/keyboard related actions, assume the cursor is already set to the right position. When the user asks you to write about a topic write about the topic not the topic itself, when the user asks you to write a word or sentence write exactly that. When the user asks you to do make or set something choose 'do_task'. USERINPUT: '{userinput}'"}]
   response = chat(
     model=model,
     messages=messages,
-    think=True,
+    think=False,
     stream=False,
-    tools=[get_memory_batch, get_sight_batch, write_on_kb, click_mouse, pause_for]
+    tools=[get_memory_batch, get_sight_batch, write_on_kb, click_mouse, pause_for, do_task]
   )
 
   if not response.message.tool_calls:
@@ -153,6 +157,12 @@ while running:
   call_result = None
 
   match call.function.name:
+    case "do_task":
+      save_conversation_summary_for_session(userinput)
+      think(f"completing task......")
+      result = _do_task(prompt=userinput)
+      say(result, stream=False)
+      continue
     case "pause_for":
       save_conversation_summary_for_session(userinput)
       think(f"pausing for {call_args["t"]} seconds......")
