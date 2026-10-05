@@ -9,6 +9,27 @@ from sentence_transformers import SentenceTransformer, util
 from ollama import chat
 from overlay import Overlay, TextHud
 
+ROW_H = 80
+COL_W = 220
+START_X = 100
+START_Y = 100
+MAX_Y = 950
+ROWS = (MAX_Y - START_Y) // ROW_H
+active = {}
+
+def next_slot():
+  for slot in list(active):
+    if active[slot].poll() is not None:
+      del active[slot]
+  slot = 0
+  while slot in active:
+    slot += 1
+  return slot
+
+def slot_to_xy(slot):
+  col, row = divmod(slot, ROWS)
+  return START_X + col * COL_W, START_Y + row * ROW_H
+
 stransformer_model = SentenceTransformer("intfloat/e5-large-v2")
 model = "gemma4:12b"
 
@@ -132,7 +153,9 @@ def start_timer(t: int):
   Returns:
     Nothing
   """
-  subprocess.Popen([sys.executable, "AItools/timer.py", str(t)])
+  slot = next_slot()
+  x, y = slot_to_xy(slot)
+  active[slot] = subprocess.Popen([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "AItools", "timer.py"), str(t), str(x), str(y)])
 
 def get_memory_batch(n:int):
   """Gives access to our previous conversation that occured outside current chat session by getting the relevant conversation that is relevant to the userinput that was between the user and you. so you can use it for more context to answer the user's question.
