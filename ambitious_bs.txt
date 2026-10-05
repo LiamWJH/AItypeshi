@@ -13,3 +13,5 @@ add a clean way to inject command and instruction
 WE HAVE THE EMBEDDING WORKING BOYSSS ITS FAST ASF too
 But
 it keeps remembering the failed task as not failed, we have to add a param to let it know that too
+
+add a notification stack for the AI for context of tools and shi
