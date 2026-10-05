@@ -4,7 +4,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from overlay import Overlay, TextHud
 
 remaining = int(sys.argv[1])
-overlay = Overlay(x=100, y=100)
+x = int(sys.argv[2])
+y = int(sys.argv[3])
+overlay = Overlay(x=x, y=y)
+# the part above this should be the same for all tools
+
 clock = TextHud(overlay.body, bg=overlay.bg)
 
 def tick():
