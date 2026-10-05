@@ -26,7 +26,7 @@ def apply_ex_styles(tk_widget, styles):
 
 
 class TextHud:
-    def __init__(self, parent, text=" ", fg="red2", bg="#101010",
+    def __init__(self, parent, text=" ", fg="cyan", bg="#101010",
                  font=("Consolas", 20)):
         self.var = tk.StringVar(value=text)
         tk.Label(parent, textvariable=self.var, fg=fg, bg=bg,
@@ -42,8 +42,8 @@ class Overlay:
     Put your components inside `overlay.body`.
     """
 
-    def __init__(self, x=100, y=100, width=None, height=None, alpha=0.45,
-                 bg="#101010", border_color="OrangeRed3", border_width=1,
+    def __init__(self, x=100, y=100, width=None, height=None, alpha=0.75,
+                 bg="#101010", border_color="CadetBlue1", border_width=1,
                  click_through=True, topmost=True, transparent_bg=True,
                  poll_ms=200):
         enable_dpi_awareness()
