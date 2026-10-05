@@ -8,6 +8,8 @@ import time
 from sight import sight
 from tooling import *
 from tooling import _get_memory_batch, _do_task
+TOOLS = [get_memory_batch, get_sight_batch, write_on_kb, click_mouse, pause_for, do_task, start_timer]
+
 
 result_queue = queue.Queue()
 
@@ -133,7 +135,7 @@ while running:
     messages=messages,
     think=False,
     stream=False,
-    tools=[get_memory_batch, get_sight_batch, write_on_kb, click_mouse, pause_for, do_task]
+    tools=TOOLS
   )
 
   if not response.message.tool_calls:
@@ -157,6 +159,12 @@ while running:
   call_result = None
 
   match call.function.name:
+    case "start_timer":
+      save_conversation_summary_for_session(userinput)
+      think(f"starting timer for {call_args['t']} seconds")
+      start_timer(**call_args)
+      update_previous(resp, userinput, "start_timer")
+      continue
     case "do_task":
       save_conversation_summary_for_session(userinput)
       think(f"completing task......")
@@ -167,23 +175,17 @@ while running:
       save_conversation_summary_for_session(userinput)
       think(f"pausing for {call_args["t"]} seconds......")
       pause_for(**call_args)
-      resp = f"waited for {call.function.arguments["t"]} seconds"
-      say(resp, isPlain=True)
       update_previous(resp, userinput, "pause_for")
       continue
     case "write_on_kb":
       save_conversation_summary_for_session(userinput)
       think(f"writing '{call_args["sentence"]}'......")
       write_on_kb(**call_args)
-      resp = f"wrote '{call_args["sentence"]}'"
-      say(resp, isPlain=True)
       update_previous(resp, userinput, "write_on_kb")
     case "click_mouse":
       save_conversation_summary_for_session(userinput)
       think(f"{call_args["button"]} clicking {call_args["clicks"]} time with {call_args["interval"]} between each clicks......")
       threading.Thread(target=click_mouse, kwargs=call_args, daemon=True).start()
-      resp = "clicked mouse"
-      say(resp, isPlain=True)
       update_previous(resp, userinput, "click_mouse")
       continue
     case "get_sight_batch":

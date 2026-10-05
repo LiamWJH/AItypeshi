@@ -4,8 +4,10 @@ import pyautogui
 import json
 import subprocess
 import os
+import sys
 from sentence_transformers import SentenceTransformer, util
 from ollama import chat
+from overlay import Overlay, TextHud
 
 stransformer_model = SentenceTransformer("intfloat/e5-large-v2")
 model = "gemma4:12b"
@@ -120,8 +122,17 @@ def _do_task(prompt):
     else:
       return
 
+# idk man imma just add buncha shit options
+def start_timer(t: int):
+  """Starts a timer that counts down.
 
+  Args:
+    t: the amount of second the count down starts from
 
+  Returns:
+    Nothing
+  """
+  subprocess.Popen([sys.executable, "AItools/timer.py", str(t)])
 
 def get_memory_batch(n:int):
   """Gives access to our previous conversation that occured outside current chat session by getting the relevant conversation that is relevant to the userinput that was between the user and you. so you can use it for more context to answer the user's question.
